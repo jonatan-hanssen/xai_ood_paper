@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{llncs}
 \usepackage[preprint]{neurips_2023}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -14,27 +14,32 @@
 \usepackage{tabularx}
 \usepackage{acronym}
 \usepackage{bm}
-\usepackage{amsthm}
 \usepackage{float}
 \usepackage{makecell}
 \usepackage{amsmath}
 \usepackage[table]{xcolor}
 \usepackage{pgfplots}
 
+\usepackage{tikz}
+
+\usetikzlibrary{positioning, matrix, backgrounds, calc}
+\usetikzlibrary{3d,decorations.text,shapes.arrows,fit}
+\usetikzlibrary{decorations.pathreplacing,calligraphy}
+
+
 \title{XAI Saliency Maps Can Be Used for OOD Detection}
 
 \author{%
-  Jonatan Hoffmann Hanssen\\
-  Department of Informatics \\
-  University of Oslo \\
-  \texttt{jonatahh@uio.no}
-  \And
-  Hugo Lewi Hammer \\
-  Department of Computer Science \\
-  OsloMet \\
-  Department of Holistic systems \\
-  SimulaMet \\
-  \texttt{hugo.hammer@oslomet.no}
+    Jonatan Hoffmann Hanssen\inst{1}
+    \and Hugo Lewi Hammer \inst{2,3}
+}
+
+\institute{
+    Department of Informatics, University of Oslo
+    \email{jonatahh@uio.no}
+    \and Department of Computer Science, OsloMet
+    \and Department of Holistic Systems, SimulaMet
+    \email{hugo.hammer@oslomet.no}
 }
 
 
@@ -46,8 +51,6 @@
 \definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
 \definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
 \newcommand{\R}{\mathbb{R}}
-
-\newtheorem{theorem}{Theorem}
 
 
 \newacro  {ai}   [AI]   {Artificial Intelligence}
@@ -83,26 +86,15 @@
 \newacro  {qcd}   [QCD]   {Quartile Coefficient of Determination}
 \newacro  {cv}[CV]{Coefficient of Variation}
 
-\theoremstyle{definition}
-\newtheorem*{definition}{Definition}
-
 \begin{document}
-
-
 \maketitle
+
+
 \bibliographystyle{plain}
 
 
 \begin{abstract}
-    When neural networks are used in high-impact settings such as cancer detection or autonomous driving, we must not only require that they make predictions with high accuracy, but also that they are aware of their shortcomings, and alert us when faced with unusual data. The need for models which "know what they do not know" has lead to the field of \ac*{ood} detection, which attempts to detect when models are exposed to data points that are far outside of their training data and thus unlikely to be classified correctly. \acs*{ood} detection is a young and developing field, and there are, to date, no methods which achieve superior performance on all benchmarks. Thus, there is a need for novel techniques which push the field forward. In this paper, we show that simply aggregating the saliency values produced by \acf*{xai} methods such as Integrated Gradients, \acs*{lime} or \acs*{gbp} is an effective way to detect \acs*{ood} data points. Furthermore, we show that these aggregates are only weakly correlated with the model's confidence in the predicted class, which allows us to combine the Maximum Logit Score with saliency aggregates, achieving \acs*{auroc} scores which are close to \ac*{sota} \acs*{ood} detection methods. Code available on GitHub. TODO: make link.
-
-
-    % In this paper, we show that \acs*{xai} saliency mapping methods extract valuable information about the \acs*{ood}'ness of samples when generating explanations. Based on this discovery, we introduce a new framework for \acs*{ood} detection, which combines saliency values extracted by \acs{xai} methods such as \acs{gradcam}, \acs{gbp}, or \acs{lime} with the \acl{mls}, achieving results which are close to the current \acl*{sota} within \acs*{ood} detection and showing that \acs*{xai} methods can be used for \acs*{ood} detection.
-
-    % \ac*{xai} is another field which is concerned with making \acs*{ai} models more trustworthy and robust. Like \acs*{ood} detection, this field has seen increased interest as \ac{ai} methods are used for a wider array of tasks than previously. \acs*{xai} methods attempt to understand how \acs*{ai} models come to a particular decision. To do this, they use gradient information, counterfactuals, and intermediate model layers to create explanations of predictions which can be inspected by humans. These methods, although they are intended primarily for human inspection, also capture information from \acs*{ai} models which can be used to detect \acs*{ood} data points. In particular, we show that \acs*{xai} saliency maps contain valuable information for \acs*{ood} detection. To date, only one prior work has attempted to combine \acs*{xai} and \acs*{ood} detection in this manner, with limited results.
-
-    % In this paper, we develop a framework which combines \acs*{xai} with a baseline \acs*{ood} detection method.
-
+When neural networks are used in high-impact settings such as cancer detection or autonomous driving, we must not only require that they make predictions with high accuracy, but also that they are aware of their shortcomings, and alert us when faced with unusual data. The need for models which "know what they do not know" has lead to the field of \ac*{ood} detection, which attempts to detect when models are exposed to data points that are far outside of their training data and thus unlikely to be classified correctly. \acs*{ood} detection is a young and developing field, and there are, to date, no methods which achieve superior performance on all benchmarks. Thus, there is a need for novel techniques which push the field forward. In this paper, we show that simply aggregating the saliency values produced by \acf*{xai} methods such as Integrated Gradients, \acs*{lime} or \acs*{gbp} is an effective way to detect \acs*{ood} data points. Furthermore, we show that these aggregates are only weakly correlated with the model's confidence in the predicted class, which allows us to combine the Maximum Logit Score with saliency aggregates, achieving \acs*{auroc} scores which are close to \ac*{sota} \acs*{ood} detection methods. Code available on GitHub. TODO: make link.
 \end{abstract}
 
 
@@ -152,7 +144,57 @@ Let $\mathcal{X}$ be an input space, with $\mathcal{Y} = \{1, 2, 3, \dots, C\}$ 
 
 \section{SalAgg+MLS} \label{section:saliencyagg_method}
 
-In this section, we introduce our framework for using \ac{xai} saliency methods for \ac{ood} detection. This framework aggregates the saliency values outputted by methods such as GradCAM, GBP or LIME, and uses this value to determine \ac{ood}-ness. Given the large number of existing XAI saliency methods and possible aggregate functions (such as the mean, maximum, third quartile or median), the framework opens up for a range of new OOD detection methods. In addition to the information extracted by saliency aggregation, we also utilize the Maximum Logit score. As Shekhar et al. \cite{combood} have shown, \ac{sota} \ac{ood} detection performance can be achieved by combining different methods which extract information from the network in different ways. Inspired by this work, we present the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework:
+In this section, we introduce our framework for using \ac{xai} saliency methods for \ac{ood} detection. This framework aggregates the saliency values (heatmaps) outputted by methods such as GradCAM, GBP or LIME, and uses this value to determine \ac{ood}-ness. Given the large number of existing XAI saliency methods and possible aggregate functions (such as the mean, maximum, third quartile or median), the framework opens up for a range of new OOD detection methods. In addition to the information extracted by saliency aggregation, we also utilize the Maximum Logit score. As Shekhar et al. \cite{combood} have shown, \ac{sota} \ac{ood} detection performance can be achieved by combining different methods which extract information from the network in different ways. Inspired by this work, we present the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework:
+
+\begin{figure}
+\hspace*{-1cm}
+\begin{tikzpicture}[
+    node distance=1.5cm and 2cm,
+    box/.style={draw, minimum width=1.5cm, minimum height=1.4cm, align=center},
+]
+
+% Nodes
+\node[box, label={[align=center]ID image}] (img1) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency0.png}};
+\node[box, label={[align=center]OOD image}, below=of img1] (img2) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency2.png}};
+
+\node[box, label={[align=center]Classifier $f$}, right=of $(img1)!0.5!(img2)$, xshift=0cm] (model) {ResNet18};
+
+% Connecting lines
+% make the arrows go into the model box, slightly offset to avoid overlap
+\draw[-latex] (img1.east) -- ++(0.4,0) |- ($(model.west)+ (0,+0.2)$);
+\draw[-latex] (img2.east) -- ++(0.4,0) |- ($(model.west)+ (0,-0.2)$);
+
+\node[box, label={[align=center]{Saliency\\Method $s$}}, right=of model, xshift=-1.3cm] (saliency) {GradCAM};
+
+\draw[-latex] ($(model.east)+ (0,-0.2)$) -> ($(saliency.west)+ (0,-0.2)$);
+\draw[-latex] ($(model.east)+ (0,+0.2)$) -> ($(saliency.west)+ (0,+0.2)$);
+
+\node[box, label={[align=center]ID image}, right=of img1, xshift=3.8cm] (img3) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency1.png}};
+\node[box, label={[align=center]ID image}, right=of img2, xshift=3.8cm] (img4) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency3.png}};
+
+\draw[-latex] ($(saliency.east)+ (0,+0.2)$) -- ++(0.3,0) |- (img3);
+\draw[-latex] ($(saliency.east)+ (0,-0.2)$) -- ++(0.3,0) |- (img4);
+
+\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, above=of img3, yshift=-0.7cm] (mls1) {3.4};
+\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, below=of img4, yshift=0.7cm] (mls2) {1.2};
+
+\draw[-latex] ($(model.east)+ (0,+0.4)$) -- ++(0.4,0) |- (mls1.west);
+\draw[-latex] ($(model.east)+ (0,-0.4)$) -- ++(0.4,0) |- (mls2.west);
+
+\node[box, label={[align=center]Aggregator $a$}, right=of saliency, xshift=1.4cm] (agg) {Mean};
+
+\draw[-latex] (img3.east) -- ++(0.4,0) |- ($(agg.west)+ (0,+0.2)$);
+\draw[-latex] (img4.east) -- ++(0.4,0) |- ($(agg.west)+ (0,-0.2)$);
+
+\node[draw, minimum width=1.5cm, label={[align=center]ID Aggregate}, right=of agg, yshift=1cm, xshift=-1cm] (agg1) {1.4};
+\node[draw, minimum width=1.5cm, label={[align=center]OOD Aggregate}, right=of agg, yshift=-1cm, xshift=-1cm] (agg2) {0.2};
+
+\draw[-latex] ($(agg.east)+ (0,+0.4)$) -- ++(0.4,0) |- (agg1.west);
+\draw[-latex] ($(agg.east)+ (0,-0.4)$) -- ++(0.4,0) |- (agg2.west);
+
+\end{tikzpicture}
+\end{figure}
+
 
 Under this framework, the \ac{ood} score is essentially a sum of a saliency aggregate and the maximum logit score, for a given prediction. However, due to the fact that both the logits and saliency aggregates can be of arbitrary magnitude, we must normalize them before summing if we to control how much each part contributes to the final score. Thus, we can sum the Z-scores of each metric instead. This ensures that the values of the maximum logit and the saliency aggregate are distributed similarly. To calculate the Z-scores, we subtract the mean and divide by the standard deviation over an entire \ac{id} validation dataset, for each metric. Thus, we calculate the mean and standard deviations of the maximum logit over an \ac{id} validation set $\mu_{\text{MLS}}^{id}$ and $\sigma_{\text{MLS}}^{id}$, as well as the mean and standard deviation of the aggregate of saliencies $\mu_{\text{Agg}}^{id}$ and $\sigma_{\text{Agg}}^{id}$.
 
@@ -212,7 +254,7 @@ Another interesting observation is that while the first six aggregations (those 
     \label{fig:both_heatmap}
 \end{figure}
 
-In most cases, \ac{id} saliencies have higher magnitudes than \ac{ood} saliencies, similarly to how \ac{id} data points more often have higher maximum logit scores than \ac{ood} data points. However, depending on the choice \ac{xai} saliency mapping method and aggregate function, this is not always the case, as can be seen in the appendix.
+In general, we find that \ac{id} saliencies have higher magnitudes than \ac{ood} saliencies, similarly to how \ac{id} data points more often have higher maximum logit scores than \ac{ood} data points.
 
 \subsection{Correlation between saliency aggregates and the maximum logit}
 
@@ -408,8 +450,6 @@ Following Selvaraju et al. \cite{gradcam}, the saliency map generated by \ac{gra
     \frac{1}{N \cdot M} \cdot \left( \sum_k  W_{ck} \cdot \text{mean}(F^k) \right).
 \end{gather}
 
-% TODO: CHECK THIS EQUATION
-
 \noindent Let us denote $1/(N \cdot M)$ as $a$. We recognize the second factor as $y^c = \text{MLS}(\bm{x})$ as described in equation \ref{eq:yc}. We then have
 
 \begin{equation}
@@ -426,28 +466,36 @@ Figure \ref{fig:both_heatmap} aggregated \ac{auroc} scores over both Near- and F
 
 \begin{figure}[hbtp]
     \begin{center}
-        \input{figure/auroc_heatmap_near_cifar10.pgf}
+    \resizebox{0.7\textwidth}{!}{%
+        \input{figure/auroc_heatmap_near_cifar10.pgf}%
+    }
     \end{center}
     \caption[Near-OOD AUROC on CIFAR10]{Near-\ac{ood} \ac{auroc} performance on CIFAR10 for all combinations of \ac{xai} methods and aggregations. Baseline performance was 86.75\% for MLS and 87.69\% for MLS. Due to numerical imprecision, the AUROC score of the mean of GradCAM is not exactly equal to the AUROC of MLS.}
 \end{figure}
 
 \begin{figure}[hbtp]
     \begin{center}
+    \resizebox{0.7\textwidth}{!}{%
         \input{figure/auroc_heatmap_far_cifar10.pgf}
+    }
     \end{center}
     \caption[Far-OOD AUROC on CIFAR10]{Far-\ac{ood} \ac{auroc} performance on CIFAR10 for all combinations of \ac{xai} methods and aggregations. Baseline performance was 91.39\% for MLS and 90.78\% for MLS.}
 \end{figure}
 
 \begin{figure}[hbtp]
     \begin{center}
+    \resizebox{0.7\textwidth}{!}{%
         \input{figure/auroc_heatmap_near_imagenet200.pgf}
+    }
     \end{center}
     \caption[Near-OOD AUROC on ImageNet200]{Near-\ac{ood} \ac{auroc} performance on ImageNet200 for all combinations of \ac{xai} methods and aggregations. The baseline performance was 83.28\% for MLS and 83.43\% for MLS.}
 \end{figure}
 
 \begin{figure}[hbtp]
     \begin{center}
+    \resizebox{0.7\textwidth}{!}{%
         \input{figure/auroc_heatmap_far_imagenet200.pgf}
+    }
     \end{center}
     \caption[Far-OOD AUROC on ImageNet200]{Far-\ac{ood} \ac{auroc} performance on ImageNet200 for all combinations of \ac{xai} methods and aggregations. The baseline performance was 91.48\% for MLS and 90.30\% for MLS.}
 \end{figure}
