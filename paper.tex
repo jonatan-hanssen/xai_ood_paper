@@ -90,11 +90,8 @@
 \maketitle
 
 
-\bibliographystyle{plain}
-
-
 \begin{abstract}
-When neural networks are used in high-impact settings such as cancer detection or autonomous driving, we must not only require that they make predictions with high accuracy, but also that they are aware of their shortcomings, and alert us when faced with unusual data. The need for models which "know what they do not know" has lead to the field of \ac*{ood} detection, which attempts to detect when models are exposed to data points that are far outside of their training data and thus unlikely to be classified correctly. \acs*{ood} detection is a young and developing field, and there are, to date, no methods which achieve superior performance on all benchmarks. Thus, there is a need for novel techniques which push the field forward. In this paper, we show that simply aggregating the saliency values produced by \acf*{xai} methods such as Integrated Gradients, \acs*{lime} or \acs*{gbp} is an effective way to detect \acs*{ood} data points. Furthermore, we show that these aggregates are only weakly correlated with the model's confidence in the predicted class, which allows us to combine the Maximum Logit Score with saliency aggregates, achieving \acs*{auroc} scores which are close to \ac*{sota} \acs*{ood} detection methods. Code available on GitHub. TODO: make link.
+When neural networks are used in high-impact settings such as cancer detection or autonomous driving, we must not only require that they make predictions with high accuracy, but also that they are aware of their shortcomings, and alert us when faced with unusual data. The need for models which "know what they do not know" has lead to the field of \ac*{ood} detection, which attempts to detect when models are exposed to data points that are far outside of their training data and thus unlikely to be classified correctly. \acs*{ood} detection is a young and developing field, and there are, to date, no methods which achieve superior performance on all benchmarks. Thus, there is a need for novel techniques which push the field forward. In this paper, we perform a comprehensive investigation of the potential of aggregating the saliency values produced by \acf*{xai} methods such as Integrated Gradients, \acs*{lime} or \acs*{gbp}, and show that this is an effective way to detect \acs*{ood} data points. Furthermore, we show that these aggregates are only weakly correlated with the model's confidence in the predicted class, which allows us to combine the Maximum Logit Score with saliency aggregates, achieving \acs*{auroc} scores which are close to \ac*{sota} \acs*{ood} detection methods. Code available on GitHub. TODO: make link.
 \end{abstract}
 
 
@@ -108,7 +105,7 @@ Secondly, although neural networks may attain high accuracy on test data and app
 
 These two problems lead to the fields of \acf{xai} and \acf{ood} detection. \ac{xai} attempts to explain the reasons why a model came to a decision, which helps to remedy the black-box nature of complicated \ac{dl} models. In a healthcare setting, such explanations can be inspected by medical practitioners to confirm the diagnosis, and can be used to give patients information about why decisions regarding their health were made. In autonomous driving or other automated high impact fields, \ac{xai} can be used to detect failure modes or to understand and improve trained models. \ac{ood} detection attempts to uncover when a data point is too different from the training data to be classified reliably. These methods could alert medical practitioners when such data points occur, thus avoiding potentially fatal misclassifications. In autonomous driving, the system could detect novel situations and cede control back to the user, avoiding accidents.
 
-Both of these fields have seen increased interest in recent years, and are vital parts of any integration of \ac{dl} in high impact settings. As two vibrant fields of study, there is great potential to combining insights from one field to improve performance in the other; an area which is underexplored. This paper investigates the possibility of using \ac{xai} methods to aid \ac{ood} detection. The overarching intuition is that when saliency maps are generated on semantically shifted data, they are creating an explanation for a wrong prediction, which leads to systematic differences when compared to explanations generated on \ac{id} data. This methodology is essentially non-existent in the literature: OpenOOD \cite{openood, openood15}, the standard \ac{ood} detection benchmarking framework which includes over 40 different methods, contains no method which uses \ac{xai} as part of its functioning.
+Both of these fields have seen increased interest in recent years, and are vital parts of any integration of \ac{dl} in high impact settings. As two vibrant fields of study, there is great potential to combining insights from one field to improve performance in the other; an area which is underexplored. This paper investigates the possibility of using \ac{xai} methods to aid \ac{ood} detection. Specifically, we look at saliency values (heatmaps) generated to explain the predicted class of an image classification model for a given input. The overarching intuition is that when saliency maps are generated on semantically shifted data, they are always creating an explanation for a wrong prediction (given that semantically shifted data does not come from any class the model is trained to predict), which leads to systematic differences when compared to explanations generated on \ac{id} data. This methodology is essentially non-existent in the literature: OpenOOD \cite{openood, openood15}, the standard \ac{ood} detection benchmarking framework which includes over 40 different methods, contains no method which uses \ac{xai} as part of its functioning.
 
 In this paper, we show that the magnitude of values generated by \ac{xai} saliency mapping methods are significantly different between \ac{id} and \ac{ood} data. By aggregating all saliency values for a given input image, we get a single number which can be used for \ac{ood} detection, achieving \ac{auroc} scores which are comparable to baseline methods such as the \ac{msp} or the \ac{mls}. Furthermore, we show that saliency aggregates are only somewhat correlated with these baselines. Inspired by the work of Shekhar et al. \cite{combood}, we combine saliency aggregations with the \ac{mls}, to exploit the information gained both by the explanation and the model prediction for \ac{ood} detection.
 
@@ -117,7 +114,7 @@ The key contributions of this work are as follows:
 \begin{itemize}
     \item We show that \ac{xai} saliency mapping methods such as \ac{lime}, \ac{gradcam} and \ac{gbp} capture valuable magnitude information which can be used for \ac{ood} detection. By forgoing normalization, which is common when displaying saliency maps, we achieve higher \ac{auroc} scores than previous works which have attempted to use \ac{xai} for \ac{ood} detection, such as Martinez et al. \cite{martinez}.
     \item Further illustrating the importance of the magnitude information in saliency maps, we show how aggregations such as the \ac{cv}, \ac{rmd} and \ac{qcd}, which are magnitude invariant, separate \ac{id} and \ac{ood} data points far worse than aggregations which capture the magnitude.
-    \item We show that for many \ac{xai} saliency mapping methods, saliency aggregates are only weakly correlated with the confidence of the prediction (the \ac{mls}). This allows us to combine the discriminative power of \ac{xai} saliency maps with traditional \ac{ood} detection. We introduce the Saliency plus Logit framework, achieving results which are close to \ac{sota} \ac{ood} detection methods.
+    \item We show that for many \ac{xai} saliency mapping methods, saliency aggregates are only weakly correlated with the confidence of the prediction (the \ac{mls}). This allows us to combine the discriminative power of \ac{xai} saliency maps with traditional \ac{ood} detection. We introduce the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework, achieving results which are close to \ac{sota} \ac{ood} detection methods.
 \end{itemize}
 
 \section{Related Work}
@@ -144,10 +141,9 @@ Let $\mathcal{X}$ be an input space, with $\mathcal{Y} = \{1, 2, 3, \dots, C\}$ 
 
 \section{SalAgg+MLS} \label{section:saliencyagg_method}
 
-In this section, we introduce our framework for using \ac{xai} saliency methods for \ac{ood} detection. This framework aggregates the saliency values (heatmaps) outputted by methods such as GradCAM, GBP or LIME, and uses this value to determine \ac{ood}-ness. Given the large number of existing XAI saliency methods and possible aggregate functions (such as the mean, maximum, third quartile or median), the framework opens up for a range of new OOD detection methods. In addition to the information extracted by saliency aggregation, we also utilize the Maximum Logit score. As Shekhar et al. \cite{combood} have shown, \ac{sota} \ac{ood} detection performance can be achieved by combining different methods which extract information from the network in different ways. Inspired by this work, we present the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework:
+In this section, we introduce our framework for using \ac{xai} saliency methods for \ac{ood} detection. This framework aggregates the saliency values (heatmaps) outputted by methods such as GradCAM, GBP or LIME, and uses this value to determine \ac{ood}-ness. Given the large number of existing XAI saliency methods and possible aggregate functions (such as the mean, maximum, third quartile or median), the framework opens up for a range of new OOD detection methods. As opposed to only using saliency aggregates, we have found superior results when combining these aggregates with the Maximum Logit Score. As Shekhar et al. \cite{combood} have shown, \ac{sota} \ac{ood} detection performance can be achieved by combining different methods which extract information from the network in different ways. Inspired by this work, we present the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework (Figure \ref{fig:salagg}:
 
 \begin{figure}
-\hspace*{-1cm}
 \begin{tikzpicture}[
     node distance=1.5cm and 2cm,
     box/.style={draw, minimum width=1.5cm, minimum height=1.4cm, align=center},
@@ -157,42 +153,52 @@ In this section, we introduce our framework for using \ac{xai} saliency methods 
 \node[box, label={[align=center]ID image}] (img1) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency0.png}};
 \node[box, label={[align=center]OOD image}, below=of img1] (img2) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency2.png}};
 
-\node[box, label={[align=center]Classifier $f$}, right=of $(img1)!0.5!(img2)$, xshift=0cm] (model) {ResNet18};
+\node[box, right=of $(img1)!0.5!(img2)$, xshift=0cm] (model) {Classifier $f$};
 
 % Connecting lines
 % make the arrows go into the model box, slightly offset to avoid overlap
 \draw[-latex] (img1.east) -- ++(0.4,0) |- ($(model.west)+ (0,+0.2)$);
 \draw[-latex] (img2.east) -- ++(0.4,0) |- ($(model.west)+ (0,-0.2)$);
 
-\node[box, label={[align=center]{Saliency\\Method $s$}}, right=of model, xshift=-1.3cm] (saliency) {GradCAM};
+\node[box, below=of model] (saliency) {Saliency\\Method $s$};
 
-\draw[-latex] ($(model.east)+ (0,-0.2)$) -> ($(saliency.west)+ (0,-0.2)$);
-\draw[-latex] ($(model.east)+ (0,+0.2)$) -> ($(saliency.west)+ (0,+0.2)$);
+\draw[-latex] ($(model.south)+ (-0.2,0)$) -> ($(saliency.north)+ (-0.2,0)$);
+\draw[-latex] ($(model.south)+ (+0.2,0)$) -> ($(saliency.north)+ (+0.2,0)$);
 
-\node[box, label={[align=center]ID image}, right=of img1, xshift=3.8cm] (img3) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency1.png}};
-\node[box, label={[align=center]ID image}, right=of img2, xshift=3.8cm] (img4) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency3.png}};
+\node[box, label={[align=center]ID Heatmap}, right=of saliency, yshift=1.4cm, xshift=-1cm] (img3) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency1.png}};
+\node[box, label={[align=center]OOD Heatmap}, right=of saliency, yshift=-1.4cm, xshift=-1cm] (img4) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency3.png}};
 
 \draw[-latex] ($(saliency.east)+ (0,+0.2)$) -- ++(0.3,0) |- (img3);
 \draw[-latex] ($(saliency.east)+ (0,-0.2)$) -- ++(0.3,0) |- (img4);
 
-\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, above=of img3, yshift=-0.7cm] (mls1) {3.4};
-\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, below=of img4, yshift=0.7cm] (mls2) {1.2};
+\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, above=of img3, yshift=1.7cm] (mls1) {3.4};
+\node[draw, minimum width=1.5cm, label={[align=center]OOD MLS}, above=of img3, yshift=0.7cm] (mls2) {1.2};
 
-\draw[-latex] ($(model.east)+ (0,+0.4)$) -- ++(0.4,0) |- (mls1.west);
-\draw[-latex] ($(model.east)+ (0,-0.4)$) -- ++(0.4,0) |- (mls2.west);
+\draw[-latex] ($(model.north)+ (-0.2,0)$) -- ++(0,0) |- (mls1.west);
+\draw[-latex] ($(model.north)+ (+0.2,0)$) -- ++(0,0) |- (mls2.west);
 
-\node[box, label={[align=center]Aggregator $a$}, right=of saliency, xshift=1.4cm] (agg) {Mean};
+\node[box, right=of saliency, xshift=1.8cm] (agg) {Aggregator\\$A$};
 
 \draw[-latex] (img3.east) -- ++(0.4,0) |- ($(agg.west)+ (0,+0.2)$);
 \draw[-latex] (img4.east) -- ++(0.4,0) |- ($(agg.west)+ (0,-0.2)$);
 
-\node[draw, minimum width=1.5cm, label={[align=center]ID Aggregate}, right=of agg, yshift=1cm, xshift=-1cm] (agg1) {1.4};
-\node[draw, minimum width=1.5cm, label={[align=center]OOD Aggregate}, right=of agg, yshift=-1cm, xshift=-1cm] (agg2) {0.2};
+\node[draw, minimum width=1.5cm, label={[align=center]ID Aggregate}, above=of agg, yshift=1cm, xshift=-1.2cm] (agg1) {1.4};
+\node[draw, minimum width=1.5cm, label={[align=center]OOD Aggregate}, above=of agg, yshift=1cm, xshift=1.2cm] (agg2) {0.2};
 
-\draw[-latex] ($(agg.east)+ (0,+0.4)$) -- ++(0.4,0) |- (agg1.west);
-\draw[-latex] ($(agg.east)+ (0,-0.4)$) -- ++(0.4,0) |- (agg2.west);
+\draw[-latex] ($(agg.north)+ (-0.2,0)$) -| ++(0,0.2) -| ++(0,0.8) -| (agg1.south);
+\draw[-latex] ($(agg.north)+ (0.2,0)$) -| ++(0,0.2) -| ++(0,0.8) -| (agg2.south);
+
+\node[fill=green!60, draw, minimum width=1.5cm, label={[align=center]{ID Sum of\\Z-scores}}, right=of mls1, xshift=1cm, yshift=0.7cm] (score1) {1.7};
+\node[fill=red!60, draw, minimum width=1.5cm, label={[align=center]{OOD Sum of\\Z-scores}}, right=of mls2, xshift=1cm] (score2) {0.4};
+
+\draw[-latex] (agg1.east) -| ++(0.2,0)  |- (score1.west);
+\draw[-latex] (agg2.east) -| ++(1,0)  |- (score2.east);
+\draw[-latex] (mls2.east) -- (score2.west);
+\draw[-latex] (mls1.east) -| (score1.south);
 
 \end{tikzpicture}
+    \caption{Figure showing the function of the SalAgg+MLS OOD detection framework. We here imagine an animal classifyier, and feed it two example images; one with an animal present (an ID data point), and one without any animals (an OOD data point). Given a model $f$ (e.g. ResNet18), a saliency mapping method $s$ (e.g. Guided Backpropagation) and an aggregation function $A$ (e.g. the vector norm), we calculate the saliency aggregate and the value of the highest logit, and combine their Z-scores to get a number indicating OOD-ness. In this case, we can imagine that the threshold $\delta$ is set at $1$, leading to the picture with an animal being classified as ID and the picture without an animal being classified as OOD.}
+    \label{fig:salagg}
 \end{figure}
 
 
@@ -260,7 +266,7 @@ In general, we find that \ac{id} saliencies have higher magnitudes than \ac{ood}
 
 Next, we show that the discriminatory power of saliency aggregations is not simply due to a high correlation with the model confidence in a potential \ac{ood} sample. Like in the previous section, we use the ImageNet200 and CIFAR10 OpenOOD benchmarks for our analysis, and average the results over both benchmarks. The full results can be found in the appendix.
 
-Figure \ref{fig:corr} shows the correlation between saliency aggregates and the \ac{mls}, averaged over both the ImageNet200 and CIFAR10 benchmarks. As we can see, \ac{gradcam} is very strongly correlated with the \ac{mls}. In fact, it can be shown that performing mean aggregation on \ac{gradcam} saliencies is equivalent to \ac{mls} \ac{ood} detection, given certain conditions (which happen to be satisfied in our case).\footnote{See the appendix.} However, the other saliency methods are less correlated, showing that the discriminatory performance of saliency aggregation is not just due to their connection with the logit of the predicted class.
+Figure \ref{fig:corr} shows the correlation between saliency aggregates and the \ac{mls}, averaged over both the ImageNet200 and CIFAR10 benchmarks. As we can see, \ac{gradcam} is very strongly correlated with the \ac{mls}. In fact, it can be shown that performing mean aggregation on \ac{gradcam} saliencies is equivalent to \ac{mls} \ac{ood} detection, given certain conditions (which happen to be satisfied in our case). See the appendix. However, the other saliency methods are less correlated, showing that the discriminatory performance of saliency aggregation is not just due to their connection with the logit of the predicted class.
 
 \begin{figure}[hbtp]
     \begin{center}
@@ -380,6 +386,7 @@ Finally, we compare the best performing method under the SalAgg+MLS framework, \
 This paper presents the first comprehensive investigation of the discriminative power of \ac{xai} saliency aggregation in an \ac{ood} detection context. We show that many commonly used \ac{xai} saliency mapping methods generate outputs which have differing magnitudes between \ac{id} and \ac{ood} samples. In addition, we show that these saliency magnitudes are not strongly correlated with the \ac{mls}, meaning that \ac{xai} saliency maps extract different aspects of the model's behaviour. Finally, we introduce the SalAgg+\ac{mls} framework, which describes a method of combining saliency aggregates with the \ac{mls}. When using \ac{gbp} and vector norm aggregation within this framework, we achieve results which are close to the \ac{sota} on OpenOOD benchmarks, especially on Far-\ac{ood}.
 
 
+\bibliographystyle{splncs04}
 \bibliography{paper}
 
 \clearpage
