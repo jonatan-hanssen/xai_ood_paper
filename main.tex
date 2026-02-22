@@ -1,0 +1,506 @@
+\documentclass[runningheads]{llncs}
+
+% ---------------------------------------------------------------
+% Include basic ECCV package
+ 
+% TODO REVIEW: Insert your submission number below by replacing '*****'
+% TODO FINAL: Comment out the following line for the camera-ready version
+\usepackage[review,year=2026,ID=*****]{eccv}
+% TODO FINAL: Un-comment the following line for the camera-ready version
+%\usepackage{eccv}
+
+% OPTIONAL: Un-comment the following line for a version which is easier to read
+% on small portrait-orientation screens (e.g., mobile phones, or beside other windows)
+%\usepackage[mobile]{eccv}
+
+
+% ---------------------------------------------------------------
+% Other packages
+
+% Commonly used abbreviations (\eg, \ie, \etc, \cf, \etal, etc.)
+\usepackage{eccvabbrv}
+
+% Include other packages here, before hyperref.
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage[hidelinks]{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{acronym}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{makecell}
+\usepackage{amsmath}
+\usepackage[table]{xcolor}
+\usepackage{pgfplots}
+
+\usepackage{tikz}
+
+\usetikzlibrary{positioning, matrix, backgrounds, calc}
+\usetikzlibrary{3d,decorations.text,shapes.arrows,fit}
+\usetikzlibrary{decorations.pathreplacing,calligraphy}
+
+
+% The "axessiblity" package can be found at: https://ctan.org/pkg/axessibility?lang=en
+\usepackage[accsupp]{axessibility}  % Improves PDF readability for those with disabilities.
+
+
+% ---------------------------------------------------------------
+% Hyperref package
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% Please disable hyperref *only* if you encounter grave issues.
+% hyperref with option pagebackref eases the reviewers' job, but should be disabled for the final version.
+%
+% If you comment hyperref and then uncomment it, you should delete
+% main.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you
+%  should be clear).
+
+% TODO FINAL: Comment out the following line for the camera-ready version
+%\usepackage[pagebackref,breaklinks,colorlinks,citecolor=eccvblue]{hyperref}
+% TODO FINAL: Un-comment the following line for the camera-ready version
+\usepackage{hyperref}
+
+% Support for ORCID icon
+\usepackage{orcidlink}
+
+\providecommand{\mathdefault}[1]{#1}
+
+\definecolor{id}{rgb}{0.4, 0.7607843137254902, 0.6470588235294118}
+\definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
+\definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
+\newcommand{\R}{\mathbb{R}}
+
+
+\newacro  {ai}      [AI]   {Artificial Intelligence}
+\newacro  {dl}      [DL]   {Deep Learning}
+\newacro  {ml}      [ML]   {Machine Learning}
+\newacro  {relu}    [ReLU]   {Rectified Linear Unit}
+\newacro  {sota}    [SoTA]   {State-of-the-Art}
+\newacro  {auroc}   [AUROC]   {Area Under Receiver Operating Characteristic}
+\newacro  {xai}     [XAI]   {Explainable Artificial Intelligence}
+\newacro  {gbp}     [GBP]   {Guided Backpropagation}
+\newacro  {gradcam} [GradCAM] {Gradient Class Activation Mapping}
+\newacro  {gap}     [GAP]   {Global Average Pooling}
+\newacro  {lime}    [LIME]   {Local Interpretable Model-Agnostic Explanations}
+\newacro  {slic}    [SLIC] {Simple Linear Iterative Clustering}
+\newacro  {id}      [ID] {In-Distribution}
+\newacro  {ood}     [OOD]   {Out-of-Distribution}
+\newacro  {msp}     [MSP]   {Maximum Softmax Probability}
+\newacro  {mls}     [MLS]   {Maximum Logit Score}
+\newacro  {msp}     [MSP]   {Maximum Softmax Probability}
+\newacro  {rmd}     [RMD]   {Relative Mean Absolute Difference}
+\newacro  {qcd}     [QCD]   {Quartile Coefficient of Determination}
+\newacro  {cv}      [CV]    {Coefficient of Variation}
+
+
+\begin{document}
+\authorrunning{J.H. Hanssen et al.}
+% ---------------------------------------------------------------
+% TODO REVIEW: Replace with your title
+\title{XAI Saliency Maps Can Be Used for OOD Detection} 
+
+% TODO REVIEW: If the paper title is too long for the running head, you can set
+% an abbreviated paper title here. If not, comment out.
+% \titlerunning{Abbreviated paper title}
+
+% TODO FINAL: Replace with your author list. 
+% Include the authors' OCRID for the camera-ready version, if at all possible.
+% \author{First Author\inst{1}\orcidlink{0000-1111-2222-3333} \and
+% Second Author\inst{2,3}\orcidlink{1111-2222-3333-4444} \and
+% Third Author\inst{3}\orcidlink{2222--3333-4444-5555}}
+
+\author{%
+    Jonatan Hoffmann Hanssen\inst{1}
+    \and Hugo Lewi Hammer \inst{2,3}
+}
+
+
+\authorrunning{J.H. Hanssen and H.L. Hammer}
+
+\institute{
+    Department of Informatics, University of Oslo
+    \email{jonatahh@uio.no}
+    \and Department of Computer Science, OsloMet
+    \email{hugo.hammer@oslomet.no}
+    \and Department of Holistic Systems, SimulaMet
+}
+
+\maketitle
+
+
+\begin{abstract}
+    When neural networks are used in high-impact settings such as cancer detection or autonomous driving, we must not only require that they make predictions with high accuracy, but also that they are aware of their shortcomings, and alert us when faced with unusual data. The need for models which "know what they do not know" has lead to the field of Out-of-Distribution (OOD) detection, which attempts to detect when models are exposed to data points that are far outside of their training data and thus unlikely to be classified correctly. OOD detection is a young and developing field, and there are to date no methods which achieve superior performance on all benchmarks. Thus, there is a need for novel techniques which push the field forward. In this paper, we perform a comprehensive investigation of the OOD detection potential of aggregating the saliency values produced by Explainable Artificial Intelligence methods such as Integrated Gradients, LIME or GBP, and show that this is an effective way to detect OOD data points. Furthermore, we show that these aggregates are only weakly correlated with the model's confidence in the predicted class, which allows us to combine the Maximum Logit Score with saliency aggregates, achieving Area Under the Receiver Operating Characteristic (AUROC) scores which are close to State-of-the-Art OOD detection methods.\footnote{URL will be revealed after review}
+
+% Code available on GitHub.\footnote{\url{https://github.com/jonatan-hanssen/ood-saliency-aggregation}}
+  \keywords{Deep Learning \and Out-of-Distribution Detection \and Explainable Artificial Intelligence}
+\end{abstract}
+
+While the combination of XAI and OOD detection has been explored in many previous works, the majority of these focus on explaining why a data point was marked as OOD, as opposed to using XAI to aid the detection itself. Delaney et al. \cite{uncertainty}, Sipple et al. \cite{generalxaiforood} and Tallón-Ballesteros et al. \cite{tallon2020explainable} used XAI methods to explain OOD detection decisions. Within network security, XAI has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections \cite{idsxai, mahbooba}, but also to aid in detection itself by inspecting the explanations of the detection system \cite{tcydenova2021detection, dnsxai}. These methods thus use XAI to aid OOD detection in a similar manner to our work, however, they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural OOD data caused by semantic or covariate shift occurring when a model is deployed.
+
+\section{Introduction}
+\label{sec:intro}
+
+Machine Learning (ML) generally, and Deep Learning (DL) specifically, has seen a tremendous increase in performance in recent years, performing comparable to humans in tasks such as image classification, speech and handwriting recognition, as well as many others \cite{performance}. Consequently, DL methods have been deployed in a multitude of fields, and have become a part of our daily lives through their role in web search, text translation, computer vision, as well as in many other technologies which are taken for granted. Despite this, the adoption DL in high impact fields, such as medicine, has been slow, with Rajkomar et al. \cite{dlmed} stating that: "surprisingly little in health care is driven by machine learning".
+
+To explain this discrepancy, we should consider that despite their impressive performance, the application of DL methods is not without drawbacks. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. Current Artificial Intelligence (AI) models perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which led the model to make a particular decision. Secondly, although neural networks may attain high accuracy on test data, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As Szegedy et al. \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, DL methods may predict equally confidently on data points which are far outside the data they have been trained on \cite{tingsim}.
+
+These two problems lead to the fields of Explainable Artificial Intelligence (XAI) and Out-of-Distribution (OOD) detection. XAI attempts to explain the reasons why a model came to a decision, while OOD detection attempts to uncover when a data point is too different from the training data to be classified reliably. Both of these fields have seen increased interest in recent years, and there is great potential to combine insights from one field to improve performance in the other; an area which is underexplored. This paper investigates the possibility of using XAI methods to aid OOD detection. Specifically, we look at saliency values (heatmaps) generated to explain the predicted class of an image classification model for a given input. The overarching intuition is that when saliency maps are generated on semantically shifted data, they are always creating an explanation for a wrong prediction (given that semantically shifted data does not come from any class the model is trained to predict), which leads to systematic differences when compared to explanations generated on ID data. This methodology is essentially non-existent in the literature: OpenOOD \cite{openood}, \cite{openood15}, the standard OOD detection benchmarking framework which includes over 40 different methods, contains no method which uses XAI as part of its functioning.
+
+In this paper, we show that the \textbf{magnitudes of values generated by XAI saliency mapping methods are significantly different between ID and OOD data}. By aggregating all saliency values for a given input image, we get a single number which can be used for OOD detection, achieving AUROC scores which are comparable to baseline methods such as the MSP or the MLS. Furthermore, we show that saliency aggregates are only somewhat correlated with these baselines. Inspired by the work of Shekhar et al. \cite{combood}, we combine saliency aggregations with the MLS, to exploit the information gained both by the model prediction and the explanation of the model prediction for OOD detection.
+
+The key contributions of this work are as follows:
+
+\begin{itemize}
+    \item We show that XAI saliency mapping methods such as Local Interpretable Model-Agnostic Explanations (LIME), Gradient Class Activation Mapping (GradCAM) and Global Average Pooling (GBP) capture valuable magnitude information which can be used for OOD detection. By forgoing normalization, which is common when displaying saliency maps, we achieve higher AUROC scores than previous works which have attempted to use XAI for OOD detection, such as Martinez et al. \cite{martinez}.
+    \item Further illustrating the importance of the magnitude information in saliency maps, we show how aggregations such as the Coefficient of Variation (CV), Relative Mean Absolute Difference (RMD) and Quartile Coefficient of Determination (QCD), which are magnitude invariant, separate ID and OOD data points far worse than aggregations which capture the magnitude.
+    \item We show that for many XAI saliency mapping methods, saliency aggregates are only weakly correlated with the confidence of the prediction (the MLS). This allows us to combine the discriminative power of XAI saliency maps with traditional OOD detection. We introduce the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework, achieving results which are close to State-of-the-Art (SoTA) OOD detection methods.
+\end{itemize}
+
+\section{Related Work}
+
+While the combination of XAI and OOD detection has been explored in many previous works, the majority of these focus on explaining why a data point was marked as OOD, as opposed to using XAI to aid the detection itself. Delaney et al. \cite{uncertainty}, Sipple et al. \cite{generalxaiforood} and Tallón-Ballesteros et al. \cite{tallon2020explainable} used XAI methods to explain OOD detection decisions. Within network security, XAI has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections \cite{idsxai, mahbooba}, but also to aid in detection itself by inspecting the explanations of the detection system \cite{tcydenova2021detection, dnsxai}. These methods thus use XAI to aid OOD detection in a similar manner to our work, however, they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural OOD data caused by semantic or covariate shift occurring when a model is deployed.
+
+Martinez et al. \cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use XAI to improve OOD detection on images. They do this by looking at saliency maps produced by GradCAMPlusPlus \cite{gradcamplusplus} during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based OOD detection. In contrast to our work, Martinez et al. consider normalized heatmaps, not raw saliency values. This method performs decently on toy benchmarks, achieving scores similar to SoTA methods when using {\it Fashion MNIST} as ID and {\it MNIST} as OOD. However, this method fails in more complicated scenarios, achieving an AUROC score of only $52\%$ on {\it CIFAR10} vs {\it SVHN}, which is far below most other OOD detection methods. 
+
+For more potential related work, we can look to OpenOOD \cite{openood}, \cite{openood15}, which aims to provide a comprehensive benchmark of all relevant methods in the field of OOD detection. Out of all 41 OOD detection methods included in this benchmark, there are no methods which use XAI.
+
+\section{Preliminaries}
+
+Let $\mathcal{X}$ be an input space, with $\mathcal{Y} = \{1, 2, 3, \dots, C\}$ as the corresponding output space. A classifier $f$ is trained on a training data set $\mathcal{D}_{in} = \{(\bm{x}_i, y_i)\}^n_{i=1}$, which contains samples drawn from the joint distribution $P_{XY}$. We denote the marginal distribution over $\mathcal{X}$ as $\mathcal{P}_{in}$, which becomes the in-distribution of our classifier $f$. During inference, the classifier may be exposed to samples which are not from $\mathcal{P}_{in}$, which are unlikely to be classified correctly by the classifier. The aim of OOD detection is to detect such samples. Thus, OOD detection is a binary classification problem, where the goal is to design a scoring function $g$ and a corresponding threshold $\delta$ such that
+
+\begin{align}
+    \text{OOD}(\bm{x})=\begin{cases}
+    \text{in } &  g(\bm{x}) \ge \delta \\
+    \text{out} &  g(\bm{x}) < \delta
+   \end{cases}.
+\end{align}
+
+
+\section{SalAgg+MLS} \label{section:saliencyagg_method}
+
+In this section, we introduce our framework for using XAI saliency methods for OOD detection. This framework aggregates the saliency values (heatmaps) outputted by methods such as GradCAM, GBP or LIME, and uses this value to determine OOD-ness. Given the large number of existing XAI saliency methods and possible aggregate functions (such as the mean, maximum, third quartile or median), the framework opens up for a range of new OOD detection methods. As opposed to only using saliency aggregates, we have found superior results when combining these aggregates with the Maximum Logit Score. As Shekhar et al. \cite{combood} have shown, SoTA OOD detection performance can be achieved by combining different methods which extract information from the network in different ways. Inspired by this work, we present the SalAgg+MLS (Saliency Aggregation plus Maximum Logit Score) framework. See Figure \ref{fig:salagg}.
+
+\begin{figure}
+\begin{tikzpicture}[
+    node distance=1.5cm and 2cm,
+    box/.style={draw, minimum width=1.5cm, minimum height=1.4cm, align=center},
+]
+
+% Nodes
+\node[box, label={[align=center]ID image}] (img1) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency0.png}};
+\node[box, label={[align=center]OOD image}, below=of img1] (img2) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency2.png}};
+
+\node[box, right=of $(img1)!0.5!(img2)$, xshift=0cm] (model) {Classifier $f$};
+
+% Connecting lines
+% make the arrows go into the model box, slightly offset to avoid overlap
+\draw[-latex] (img1.east) -- ++(0.4,0) |- ($(model.west)+ (0,+0.2)$);
+\draw[-latex] (img2.east) -- ++(0.4,0) |- ($(model.west)+ (0,-0.2)$);
+
+\node[box, below=of model] (saliency) {Saliency\\Method $s$};
+
+\draw[-latex] ($(model.south)+ (-0.2,0)$) -> ($(saliency.north)+ (-0.2,0)$);
+\draw[-latex] ($(model.south)+ (+0.2,0)$) -> ($(saliency.north)+ (+0.2,0)$);
+
+\node[box, label={[align=center]ID Heatmap}, right=of saliency, yshift=1.4cm, xshift=-1cm] (img3) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency1.png}};
+\node[box, label={[align=center]OOD Heatmap}, right=of saliency, yshift=-1.4cm, xshift=-1cm] (img4) {\includegraphics[width=0.125\textwidth]{figure/meansaliency/meansaliency3.png}};
+
+\draw[-latex] ($(saliency.east)+ (0,+0.2)$) -- ++(0.3,0) |- (img3);
+\draw[-latex] ($(saliency.east)+ (0,-0.2)$) -- ++(0.3,0) |- (img4);
+
+\node[draw, minimum width=1.5cm, label={[align=center]ID MLS}, above=of img3, yshift=1.7cm] (mls1) {3.4};
+\node[draw, minimum width=1.5cm, label={[align=center]OOD MLS}, above=of img3, yshift=0.7cm] (mls2) {1.2};
+
+\draw[-latex] ($(model.north)+ (-0.2,0)$) -- ++(0,0) |- (mls1.west);
+\draw[-latex] ($(model.north)+ (+0.2,0)$) -- ++(0,0) |- (mls2.west);
+
+\node[box, right=of saliency, xshift=1.8cm] (agg) {Aggregator\\$A$};
+
+\draw[-latex] (img3.east) -- ++(0.4,0) |- ($(agg.west)+ (0,+0.2)$);
+\draw[-latex] (img4.east) -- ++(0.4,0) |- ($(agg.west)+ (0,-0.2)$);
+
+\node[draw, minimum width=1.5cm, label={[align=center]ID Aggregate}, above=of agg, yshift=1cm, xshift=-1.2cm] (agg1) {1.4};
+\node[draw, minimum width=1.5cm, label={[align=center]OOD Aggregate}, above=of agg, yshift=1cm, xshift=1.2cm] (agg2) {0.2};
+
+\draw[-latex] ($(agg.north)+ (-0.2,0)$) -| ++(0,0.2) -| ++(0,0.8) -| (agg1.south);
+\draw[-latex] ($(agg.north)+ (0.2,0)$) -| ++(0,0.2) -| ++(0,0.8) -| (agg2.south);
+
+\node[fill=green!60, draw, minimum width=1.5cm, label={[align=center]{ID Sum of\\Z-scores}}, right=of mls1, xshift=1cm, yshift=0.7cm] (score1) {1.7};
+\node[fill=red!60, draw, minimum width=1.5cm, label={[align=center]{OOD Sum of\\Z-scores}}, right=of mls2, xshift=1cm] (score2) {0.4};
+
+\draw[-latex] (agg1.east) -| ++(0.2,0)  |- (score1.west);
+\draw[-latex] (agg2.east) -| ++(1,0)  |- (score2.east);
+\draw[-latex] (mls2.east) -- (score2.west);
+\draw[-latex] (mls1.east) -| (score1.south);
+
+\end{tikzpicture}
+    \caption{Figure showing the function of the SalAgg+MLS OOD detection framework. Here, we imagine an animal classifier, and feed it two example images; one with an animal present (an ID data point), and one without any animals (an OOD data point). Given a model $f$ (e.g. ResNet18), a saliency mapping method $s$ (e.g. Guided Backpropagation) and an aggregation function $A$ (e.g. the vector norm), we calculate the saliency aggregate and the logit for the predicted class, and combine their Z-scores to get a number indicating OOD-ness. In this case, we can imagine that the threshold $\delta$ is set at $1$, leading to the picture of an animal being classified as ID and the picture without an animal being classified as OOD.}
+    \label{fig:salagg}
+\end{figure}
+
+
+Under this framework, the OOD score is essentially a sum of a saliency aggregate and the maximum logit score for a given prediction. However, due to the fact that both the logits and saliency aggregates can be of arbitrary magnitude, we must normalize them before summing if we wish to control how much each part contributes to the final score. Thus, we sum the Z-scores of each metric instead. This ensures that the values of the maximum logit and the saliency aggregate are distributed similarly. To calculate the Z-scores, we subtract the mean and divide by the standard deviation over an entire ID validation dataset, for each metric. Thus, we calculate the mean and standard deviations of the maximum logit over an ID validation set $\mu_{\text{MLS}}^{id}$ and $\sigma_{\text{MLS}}^{id}$, as well as the mean and standard deviation of the aggregate of saliencies $\mu_{\text{Agg}}^{id}$ and $\sigma_{\text{Agg}}^{id}$.
+
+To align ourselves with convention in the field of OOD detection, we must define the OOD detection score as one which is higher for ID data than for OOD data. However, given that our framework does not place any limits on the choice of aggregation, we cannot know in advance whether a specific aggregation will have higher or lower values for ID data. To keep the framework as general as possible, we therefore include a {\it sign} factor, which multiplies the saliency aggregate by 1 or $-1$, depending on whether the ID aggregates are higher or lower, respectively. To do this, we calculate the mean value of the aggregation metric over a validation OOD dataset. We denote this value as $\mu_{\text{Agg}}^{ood}$. The sign factor can then be calculated by $\text{sign}(\mu_{\text{Agg}}^{id} - \mu_{\text{Agg}}^{ood})$, which we denote as $S$.
+
+We have now defined the necessary variables required to describe this framework mathematically. We assume we have a model $f: \bm{x} \to \R^C$, an XAI saliency mapping method $s: (f, \bm{x}) \to \R^{K \times N \times M}$, and an aggregation function $A: \R^{K \times N \times M} \rightarrow \R$. The saliency mapping method is defined as one which does not normalize or rectify its outputs, meaning that if we use methods such as GradCAM, we must modify them to remove normalization and rectifying. In addition, we always calculate the saliencies for the predicted class. An OOD detector under this framework then has the following form, given a threshold $\delta$:
+
+{\large
+\begin{align}
+    g(\bm{x}; s, A, \delta)=\begin{cases}
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} < \delta \\
+   \end{cases}
+\label{eq:salagg_def}
+\end{align}
+}
+
+\noindent In fact, this detector can be simplified somewhat. Consider the following:
+
+\begin{gather}
+S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \left( \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} - \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} \right) + \frac{\max_i f(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \left(S \cdot \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \right)
+\end{gather}
+
+\noindent All the values in the third term of the above summation are constants; they do not depend on $\bm{x}$. Thus, we can disregard these terms, as all they do is shift all outputs by a constant value. The final OOD detector thus has the following form:
+
+\begin{align}
+    g(\bm{x}; s, A, \delta)=\begin{cases}
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x})}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i f(\bm{x})}{\sigma_{\text{MLS}}^{id}} < \delta \\[10pt]
+   \end{cases}
+\label{eq:aggregate}
+\end{align}
+
+To use a method under this framework, one simply chooses an XAI saliency mapping method and an aggregate. In our testing, we have chosen LIME \cite{lime}, Occlusion \cite{occlusion}, GradCAM \cite{gradcam}, Integrated Gradients \cite{integratedgradients} and GBP \cite{gbp} as the XAI saliency mapping methods. For aggregate functions, six aggregates which capture the magnitude of the saliency values in different ways have been chosen. These are the mean, median, vector norm, range, maximum value and third quartile. In addition, three aggregate functions which are (more or less) scale invariant have also been chosen, which measure the statistical spread of the saliencies without considering the magnitude. These aggregates are the CV, the RMD and the QCD. By including these aggregate functions, we can compare the performance of magnitude variant and invariant functions and investigate the importance of saliency magnitudes in an OOD detection context.
+
+\section{Results} \label{section:results}
+
+This section is divided into three parts: First, we show that the magnitudes of saliency values, by themselves, are discriminative in an OOD detection context. In addition, we show that aggregates which are magnitude invariant exhibit very low discriminative power, showcasing the importance of using raw saliency values as opposed to normalized heatmaps. Next, we show that saliency aggregates are not strongly correlated with baseline OOD detection metrics such as the MLS. Finally, we test the performance of a selection of methods under the SalAgg+MLS framework, and show that XAI based OOD detection can be competitive with SoTA methods.
+
+In all cases, the experiments are conducted on pretrained ResNet architectures with weights provided as part of OpenOOD. This ensures that the results are comparable to other methods tested under this framework.\footnote{\url{https://zjysteven.github.io/OpenOOD/}}
+
+\subsection{The discriminative performance of saliency aggregates}
+
+Figure \ref{fig:both_heatmap} shows the combined Near- and Far-OOD detection performance on both ImageNet200 and CIFAR10 for all combinations of XAI methods and aggregate functions. As we can see, simply aggregating the saliency maps generated on ID and OOD data points allows for efficient detection of OOD data, with the best performing combination (GradCAM saliency mapping with vector norm aggregation) achieving an AUROC score of 88.68\%. Among the other XAI saliency mapping methods, we also see high AUROC scores, given a suitable choice of aggregation. In comparison, the baseline methods MLS and MSP achieve average AUROC scores of 88.23\% and 88.05\%, respectively. As we see, simply aggregating saliency values can lead to results which are above baseline methods.
+
+Another interesting observation is that while the first six aggregations (those which capture magnitude) perform well, the last three (which are magnitude invariant) perform very poorly. This suggests that it is primarily the magnitude information of saliency values which is important for OOD detection, not their spread or relation to each other.
+
+\begin{figure}[hbtp]
+    \begin{center}
+    \resizebox{0.8\textwidth}{!}{%
+        \input{figure/auroc_heatmap.pgf}
+        }
+    \end{center}
+    \caption[Overall Performance on ImageNet200 and CIFAR10]{Heatmap of overall AUROC performance for all combinations of XAI methods and aggregations on ImageNet200 and CIFAR10}
+    \label{fig:both_heatmap}
+\end{figure}
+
+In general, we find that ID saliencies have higher magnitudes than OOD saliencies, similarly to how ID data points more often have higher maximum logit scores than OOD data points.
+
+\subsection{Correlation between saliency aggregates and the maximum logit}
+
+Next, we show that the discriminatory power of saliency aggregations is not simply due to a high correlation with the model confidence in a potential OOD sample. Like in the previous section, we use the ImageNet200 and CIFAR10 OpenOOD benchmarks for our analysis, and average the results over both benchmarks.
+
+Figure \ref{fig:corr} shows the correlation between saliency aggregates and the MLS, averaged over both the ImageNet200 and CIFAR10 benchmarks. As we can see, GradCAM is very strongly correlated with the MLS. In fact, it can be shown that performing mean aggregation on GradCAM saliencies is equivalent to MLS OOD detection, given certain conditions (which happen to be satisfied in our case). See the appendix. However, the other saliency methods are less correlated, showing that the discriminatory performance of saliency aggregation is not just due to their connection with the logit of the predicted class.
+
+\begin{figure}[hbtp]
+    \begin{center}
+    \resizebox{0.8\textwidth}{!}{%
+        \input{figure/both_heatmap.pgf}
+    }
+    \end{center}
+    \caption[Average Correlation on ImageNet200 and CIFAR10]{Heatmap showing the correlation between the saliency aggregate of a given XAI method and the MLS, averaged over the CIFAR10 and ImageNet200 OpenOOD benchmarks}
+    \label{fig:corr}
+\end{figure}
+
+\subsection{Performance of SalAgg+MLS}
+
+Finally, we present the results of using the proposed framework, which combines saliency aggregations and the maximum logit score to predict whether a data point is OOD or not. To do this, we select five combinations of saliency mapping methods and aggregations to test and compare against the baseline MLS. These combinations are selected by choosing the best performing aggregation for each XAI method, as reported in Figure \ref{fig:both_heatmap}. To ensure unbiased results, the OpenOOD benchmarks have been split into validation and testing benchmarks, with the choice of aggregation being done on the validation benchmarks, while the final results are reported on the testing benchmarks. In addition, the testing benchmarks have been bootstrapped ten times, allowing for statistical comparisons between the baseline MLS and the methods which complement MLS by adding a saliency aggregate.
+
+As we can see from Table \ref{table:comparison}, in all benchmarks except for CIFAR100 Near-OOD, there are statistically significant improvements over just using the MLS for multiple methods, showing that XAI saliency aggregations add relevant information to traditional OOD detection methods. In addition, we see that combining the vector norm of GBP saliencies with the MLS is particularly effective, being the best performing method in every benchmark except for CIFAR100 Near-OOD.
+
+\begin{table}[hbtp]
+\setlength\tabcolsep{3pt}
+\begin{center}
+\begin{tabular}{ |c!{\vrule width 1.5pt}c!{\vrule width 1.5pt}c|c|c|c|c| }
+    \hline
+    Dataset & MLS & LIMENorm & OccRange & GrCAMNorm & IGMean & GBPNorm \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    ImgNet200 Near & 82.8 & 83.4** & 80.2 & 83.2** & 83.2** & \textbf{83.7}** \\
+    \hline
+    \rowcolor{far!50}
+    ImgNet200 Far & 91.3 & 93.1** & 92.2** & 92.1** & 91.0 & \textbf{94.0}** \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    ImgNet1K Near & 76.3 & 74.2 & 71.0 & 76.7** & 75.4 & \textbf{79.0}** \\
+    \hline
+    \rowcolor{far!50}
+    ImgNet1K Far & 89.5 & 92.1** & 89.0 & 91.2** & 88.9 & \textbf{94.1}** \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    CIFAR10 Near & 87.0 & 87.8** & 88.0** & 86.9 & 87.2** & \textbf{89.9}** \\
+    \hline
+    \rowcolor{far!50}
+    CIFAR10 Far & 91.8 & 93.4** & 90.5 & 91.8 & 92.5** & \textbf{94.8}** \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    CIFAR100 Near & \textbf{81.2} & 78.9 & 78.6 & 81.2 & 80.6 & 78.7 \\
+    \hline
+    \rowcolor{far!50}
+    CIFAR100 Far & 79.8 & 82.1** & 81.4** & 79.9** & 82.0** & \textbf{84.2}** \\
+    \hline
+    \end{tabular}
+    \caption[Wilcoxon Test for SalAgg+MLS on ImageNet200]{Average AUROC scores over ten bootstraps for the five example methods under the SalAgg+MLS framework, as well as the MLS. The asterisks denote the Bonferroni corrected statistical significance of a Wilcoxon signed-rank test done against the null hypothesis that the developed methods are no better than the MLS. For each benchmark, the best performing method is highlighted in bold.}
+    \label{table:comparison}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+Finally, we compare the best performing method under the SalAgg+MLS framework, GBPNorm, to SoTA OOD detection methods, in Table \ref{table:sota}. In this case, the testing is done on the entire benchmark as developed by OpenOOD, as opposed to a testing split. This is done to ensure accurate comparison with the results reported by OpenOOD \cite{openood15}, which use the entire dataset. From this table we see that although GBPNorm does not achieve the highest AUROC in any benchmark, its performance is quite close to the SoTA in many cases. This demonstrates the clear potential of using XAI saliency maps for OOD detection.
+
+
+\begin{table}[hbtp]
+\setlength\tabcolsep{3pt}
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c|c| }
+    \hline
+    Dataset & RotPred & CombOOD & OE+MSP & AdaScale-L & GBPNorm \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    ImageNet200 Near-OOD & 81.59 & \textbf{95.74} & 85.73 & 84.84 & 83.37 \\
+    \hline
+    \rowcolor{far!50}
+    ImageNet200 Far-OOD & 92.56 & 92.57 & 89.02 & \textbf{94.86} & 93.87 \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    ImageNet1K Near-OOD & 76.52 & \textbf{95.22} & N/A & 84.27 & 78.90 \\
+    \hline
+    \rowcolor{far!50}
+    ImageNet1K Far-OOD & 90.00 & 90.24 & N/A & \textbf{97.28} & 94.03 \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    CIFAR10 Near-OOD & 92.68 & 91.13 & \textbf{94.82} & 74.99 & 89.90 \\
+    \hline
+    \rowcolor{far!50}
+    CIFAR10 Far-OOD & 96.62 & 94.65 & \textbf{96.00} & 79.02 & 94.92 \\
+    \hline
+    \hline
+    \rowcolor{near!50}
+    CIFAR100 Near-OOD & 76.43 & 78.77 & \textbf{88.30} & 80.54 & 78.73 \\
+    \hline
+    \rowcolor{far!50}
+    CIFAR100 Far-OOD & 88.40 & \textbf{85.87} & 81.41 & 83.38 & 84.18 \\
+    \hline
+    \end{tabular}
+    \caption[Wilcoxon Test for SalAgg+MLS on ImageNet200]{The GBPNorm method under the SalAgg+MLS compared to the performance of SoTA OOD detection methods as reported by Zhang et al. \cite{openood15}. The best performing method in each case is highlighted in bold. }
+    \label{table:sota}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+\section{Conclusion}
+
+In this paper, we present the first comprehensive investigation of the discriminative power of XAI saliency aggregation in an OOD detection context. We show that many commonly used XAI saliency mapping methods generate outputs which have differing magnitudes between ID and OOD samples. In addition, we show that these saliency magnitudes are not strongly correlated with the MLS, meaning that XAI saliency maps extract different aspects of the model's behaviour. Based on our investigation, we propose the SalAgg+MLS framework, which describes a method for combining saliency aggregates with the MLS. When using GBP and vector norm aggregation within this framework, we achieve results which are close to the SoTA on OpenOOD benchmarks, especially on Far-OOD.
+
+\bibliographystyle{splncs04}
+\bibliography{main}
+
+\section*{Appendix} \label{section:appendix}
+
+\subsection*{Proof of Equivalence between GradCAM Saliency Aggregation and MLS}
+
+The following theorem shows that taking the mean value of the saliency values outputted by GradCAM is equivalent to MLS in an OOD detection context, under certain conditions. This illustrates that XAI saliency mapping methods extract information which can be used for OOD detection.
+
+In this case, we assume that the classification stage of the CNN is a simple Global Average Pooling (GAP) over the feature map followed by a single linear layer. Such a structure is the classification head of all ResNet models. Furthermore, we choose to perform GradCAM on the final layer of the network, which is recommended by Selvaraju et al. \cite{gradcam}. These two conditions give rise to the following theorem:
+
+\begin{theorem} \label{theorem}
+    Assume we have a network where $y^c = \sum_k \text{mean}(F_k) \cdot W_{ck}$, where $F$ is a convolutional feature map and $W$ is a linear layer of size $[\text{channels} \times \text{classes}]$. Taking the mean value of the unrectified output of GradCAM for this network and a given input is equal to the MLS up to a constant $a$, and thus equivalent to MLS an OOD detection context:
+    \[\text{mean}(\text{GradCAM}_F'(\bm{x})) = a \cdot \text{MLS}(\bm{x}),\]
+    where $'$ denotes the absence of a ReLU in the GradCAM definition.
+\end{theorem}
+
+\begin{proof}
+
+Following Selvaraju et al. \cite{gradcam}, the saliency map generated by GradCAM has the following definition:
+
+\begin{equation}
+    \text{GradCAM}_F(\bm{x}) = ReLU\left(\sum_k \left( \frac{1}{N \cdot M} \sum_i \sum_j \frac{\delta y^c}{\delta F_{ij}^k} \right) F^k \right).
+\end{equation}
+
+\noindent Here, $F^k$ is the k'th channel of the final convolutional feature map, while $N$ and $M$ are its dimensions. The above equation simply describes averaging the gradients of the logit of class $c$ for each channel, and using these values to perform a weighted sum of the channels in the feature map. While $c$ can be any class index, in this case, we define $c = \max_i f_i(\bm{x})$, i.e we calculate the saliency map for the predicted class. We remove the ReLU activation function from the GradCAM definition and use the raw saliency values, given that this is specified in the theorem. Taking the mean of this function, we get the following equation:
+
+\begin{equation} \label{eq:meangradcam}
+    \text{mean}(\text{GradCAM}_F'(\bm{x})) =
+    \text{mean} \left(\sum_k \left( \frac{1}{N \cdot M} \sum_i \sum_j \frac{\delta y^c}{\delta F_{ij}^k} \right) F^k \right).
+\end{equation}
+
+\noindent Given the assumptions of the theorem, we have that the logit $y^c$ for class $c$ is calculated in the following manner:
+
+\begin{equation} \label{eq:yc}
+    y^c = \sum_k \text{mean}(F_k) \cdot W_{ck} \\
+    = \sum_k \left( \frac{\sum_i \sum_j F^k_{ij}}{N \cdot M} \cdot W_{ck} \right) .
+\end{equation}
+
+\noindent This equation simply describes GAP followed by a single linear layer. Given our definition of $c = \max_i f_i(\bm{x})$, $y^c = \text{MLS}(\bm{x})$. We return to Equation \ref{eq:meangradcam}
+
+\begin{equation} \label{eq:salagg}
+    \text{mean}(\text{GradCAM}_F'(\bm{x})) =
+    \text{mean} \left(\sum_k \left( \frac{1}{N \cdot M} \sum_i \sum_j \frac{\delta y^c}{\delta F_{ij}^k} \right) F^k \right).
+\end{equation}
+
+\noindent Given equation \ref{eq:yc},
+
+\begin{equation}
+    \frac{\delta y^c}{\delta F^k_{ij}} = \frac{W_{ck}}{N \cdot M}.
+\end{equation}
+
+\noindent We may now substitute this derivative in equation \ref{eq:salagg}:
+
+\begin{equation}
+    \text{mean} \left(\sum_k \left( \frac{1}{N \cdot M} \sum_i \sum_j \frac{W_{ck}}{N \cdot M} \right) F^k \right).
+\end{equation}
+
+\noindent We now perform some simple algebra, exploiting the fact that $\text{mean}(a \cdot \bm{x}) = a \cdot \text{mean}(\bm{x})$ and that $\sum_i c \cdot x_i = c \sum_i x_i$:
+
+\begin{gather}
+    \text{mean}(\text{GradCAM}_F'(\bm{x})) =
+    \text{mean} \left(\sum_k \left( \frac{1}{N \cdot M} \sum_i \sum_j \frac{W_{ck}}{N \cdot M} \right) F^k \right) \\
+    = \text{mean} \left(\sum_k \left(  \sum_i \sum_j \frac{W_{ck}}{N \cdot M}  \right) F^k \right) \\
+    = \frac{1}{N \cdot M} \text{mean} \left(\sum_k \left( (N \cdot M) \frac{W_{ck}}{N \cdot M} \right) F^k \right) \\
+    = \frac{1}{N \cdot M} \text{mean} \left(\sum_k  W_{ck} \cdot F^k \right) =
+    \frac{1}{N \cdot M} \cdot \left( \sum_k  W_{ck} \cdot \text{mean}(F^k) \right).
+\end{gather}
+
+\noindent Let us denote $1/(N \cdot M)$ as $a$. We recognize the second factor as $y^c = \text{MLS}(\bm{x})$ as described in equation \ref{eq:yc}. We then have
+
+\begin{equation}
+    \text{mean}(\text{GradCAM}_F'(\bm{x})) = a \cdot \text{MLS}(\bm{x}).
+\end{equation}
+
+\end{proof}
+
+This theorem shows that XAI saliency mapping methods, although they have been developed for an entirely different purpose than OOD detection, may also collect information which can be used for OOD detection.
+
+\end{document}
